@@ -1,20 +1,21 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, dash_table
-from dash.exceptions import PreventUpdate
 from app import app
+import dbconnect  # Import the dbconnect module
+
+# Fetch client data from the database
+client_sql = "SELECT client_id, client_name, client_company, client_email FROM client;"
+client_columns = ['client_id', 'client_name', 'client_company', 'client_email']
+clients_data = dbconnect.getDataFromDB(client_sql, (), client_columns)  # Fetch the data
 
 # Define the app layout
 layout = dbc.Container([
-    # Title Row for Client Database Management
     dbc.Row(
         [
             dbc.Col(
                 [
-                    html.H2(
-                        'Client Database', 
-                        style={"marginBottom": "0px"}  # Reduce space below heading
-                    ),
+                    html.H2('Client Database', style={"marginBottom": "0px"})
                 ],
                 md=8,
             ),
@@ -29,23 +30,19 @@ layout = dbc.Container([
                 style={"display": "flex", "alignItems": "center", "justifyContent": "flex-end"},
             ),
         ],
-        className="mb-1",  # Adjust margin-bottom of row
+        className="mb-1",
         align="center"
     ),
     html.Hr(),
 
-    # Row for search bar
+    # Row for search bar and Add New Client button
     dbc.Row(
         [
             dbc.Col(
                 [
-                    html.Label(
-                        "Search Client Name", 
-                        className="form-label", 
-                        style={"fontSize": "18px", "fontWeight": "bold"}
-                    ),
+                    html.Label("Search Client Name", className="form-label", style={"fontSize": "18px", "fontWeight": "bold"}),
                     dcc.Input(
-                        id="search_client_name",  # ID for search bar
+                        id="search_client_name",  
                         type="text",
                         placeholder="Enter Client name...",
                         className="form-control",
@@ -58,34 +55,23 @@ layout = dbc.Container([
         className="mb-4",
         align="center"
     ),
-    
-    # Client Data Table
     dbc.Row(
         dash_table.DataTable(
-            id="reports-table",
+            id="client-table",
             columns=[
                 {"name": "Client ID", "id": "client_id"},
                 {"name": "Client Name", "id": "client_name"},
                 {"name": "Client Company", "id": "client_company"},
-                {"name": "Client Email Address", "id": "client_email_address"},
-                {"name": "Action", "id": "action", "presentation": "markdown"}  # Action column in markdown format
+                {"name": "Client Email Address", "id": "client_email"},
+                {"name": "Action", "id": "action", "presentation": "markdown"}
             ],
-            data=[
-                {
-                    "client_id": "1", 
-                    "client_name": "Jason Bauer", 
-                    "client_company": "Head Over Heels", 
-                    "client_email_address": "jason@hohgymnj.com", 
-                    "action": f"[Edit](/client_profile/client_management_profile?mode=edit&id=1)"
-                },
-                {
-                    "client_id": "2", 
-                    "client_name": "Mandi Wilson-Saur", 
-                    "client_company": "Northwest Gymnastics Inc.", 
-                    "client_email_address": "mandiwilson1225@gmail.com", 
-                    "action": f"[Edit](/client_profile/client_management_profile?mode=edit&id=2)"
-                },
-            ],
+            data=[{
+                "client_id": row["client_id"],
+                "client_name": row["client_name"],
+                "client_company": row["client_company"],
+                "client_email": row["client_email"],
+                "action": f"[Edit](/client_profile/client_management_profile?mode=edit&id={row['client_id']})"
+            } for _, row in clients_data.iterrows()],
             style_cell={
                 "padding": "10px",
                 "textAlign": "left"
@@ -103,7 +89,7 @@ layout = dbc.Container([
             style_data_conditional=[
                 {
                     "if": {"column_id": "action"},
-                    "color": "#007bff",  # Link color
+                    "color": "#007bff",
                     "textDecoration": "underline",
                     "cursor": "pointer"
                 }
