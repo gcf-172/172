@@ -8,7 +8,7 @@ from dbconnect import getDataFromDB, modifyDB
 
 layout = html.Div(
     [
-        html.H2('jobs Details'), # Page Header
+        html.H2('Job Details'), # Page Header
         html.Hr(),
         dbc.Alert(id='jobsprofile_alert', is_open=False), # For feedback purposes
         dbc.Form(
