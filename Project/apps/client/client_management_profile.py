@@ -1,24 +1,18 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, dash_table
-from dash.dependencies import Input, Output
-
+from dash.exceptions import PreventUpdate
 from app import app
 
-# Dummy data (replace with actual DB query)
-skills_data = [
-    {"skill_id": "1", "skill_name": "Admin Assistance", "skill_description": "Manages schedules, emails, and documents to support smooth operations."},
-    {"skill_id": "2", "skill_name": "Social Media Management", "skill_description": "Curates and posts content to grow and engage online audiences."},
-]
-
+# Define the app layout
 layout = dbc.Container([
-    # Title Row for Skills Database
+    # Title Row for Client Database Management
     dbc.Row(
         [
             dbc.Col(
                 [
                     html.H2(
-                        'Skills Database', 
+                        'Client Database', 
                         style={"marginBottom": "0px"}  # Reduce space below heading
                     ),
                 ],
@@ -26,8 +20,8 @@ layout = dbc.Container([
             ),
             dbc.Col(
                 dbc.Button(
-                    "Add New Skill",
-                    href='/skills/skill_management_profile?mode=add',
+                    "Add New Client",
+                    href='/client/client_management_profile?mode=add',
                     style={"borderRadius": "20px", "fontWeight": "bold", "fontSize": "18px", "backgroundColor": "#194D62", "color": "white", "marginBottom": "0px"},
                     className="float-end"
                 ),
@@ -40,20 +34,20 @@ layout = dbc.Container([
     ),
     html.Hr(),
 
-    # Row for search bar and Add New Skill button
+    # Row for search bar
     dbc.Row(
         [
             dbc.Col(
                 [
                     html.Label(
-                        "Search Skill Name", 
+                        "Search Client Name", 
                         className="form-label", 
                         style={"fontSize": "18px", "fontWeight": "bold"}
                     ),
                     dcc.Input(
-                        id="search_skill_name",  # ID for search bar
+                        id="search_client_name",  # ID for search bar
                         type="text",
-                        placeholder="Enter Skill name...",
+                        placeholder="Enter Client name...",
                         className="form-control",
                         style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px"}
                     ),
@@ -64,16 +58,34 @@ layout = dbc.Container([
         className="mb-4",
         align="center"
     ),
+    
+    # Client Data Table
     dbc.Row(
         dash_table.DataTable(
             id="reports-table",
             columns=[
-                {"name": "Skill ID", "id": "skill_id"},
-                {"name": "Skill Name", "id": "skill_name"},
-                {"name": "Skill Description", "id": "skill_description"},
-                {"name": "Action", "id": "action", "presentation": "markdown"}  # Change to markdown
+                {"name": "Client ID", "id": "client_id"},
+                {"name": "Client Name", "id": "client_name"},
+                {"name": "Client Company", "id": "client_company"},
+                {"name": "Client Email Address", "id": "client_email_address"},
+                {"name": "Action", "id": "action", "presentation": "markdown"}  # Action column in markdown format
             ],
-            data=skills_data,  # Data dynamically populated
+            data=[
+                {
+                    "client_id": "1", 
+                    "client_name": "Jason Bauer", 
+                    "client_company": "Head Over Heels", 
+                    "client_email_address": "jason@hohgymnj.com", 
+                    "action": f"[Edit](/client_profile/client_management_profile?mode=edit&id=1)"
+                },
+                {
+                    "client_id": "2", 
+                    "client_name": "Mandi Wilson-Saur", 
+                    "client_company": "Northwest Gymnastics Inc.", 
+                    "client_email_address": "mandiwilson1225@gmail.com", 
+                    "action": f"[Edit](/client_profile/client_management_profile?mode=edit&id=2)"
+                },
+            ],
             style_cell={
                 "padding": "10px",
                 "textAlign": "left"
@@ -97,19 +109,5 @@ layout = dbc.Container([
                 }
             ]
         )
-    ),
+    )
 ])
-
-# Callback to update table data based on search input
-@app.callback(
-    Output('reports-table', 'data'),
-    [Input('search_skill_name', 'value')]
-)
-def update_table(search_value):
-    filtered_data = [skill for skill in skills_data if search_value.lower() in skill['skill_name'].lower()] if search_value else skills_data
-    
-    for skill in filtered_data:
-        skill['action'] = f"[Edit](/skill_profile/skill_management_profile?mode=edit&id={skill['skill_id']})"
-    
-    return filtered_data
-
