@@ -65,7 +65,6 @@ layout = html.Div(
                 ),
             ]
         ),
-        # Left Section: Dental Studio Database Text
         html.Div(
             children=[
                 html.Img(src="/assets/edygrad-ecosytem.png", style={'width': '600px', 'marginBottom': '20px', 'display': 'block', 'marginLeft': 'auto', 'marginRight': 'auto'}),  # Adjusted logo size
