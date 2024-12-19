@@ -179,7 +179,7 @@ layout = html.Div(
             ]
         ),
 
-# Individual Reports
+#Individual Reports
 dbc.Row(
     dbc.Accordion(
         [
@@ -193,41 +193,49 @@ dbc.Row(
                     
                     dbc.CardBody(
                         [
-                            # Dropdown to select Client or VA
-                            html.Div(
-                                dcc.Dropdown(
-                                    id='user-type-dropdown',
-                                    options=[
-                                        {'label': 'Client', 'value': 'client'},
-                                        {'label': 'Virtual Assistant (VA)', 'value': 'va'}
-                                    ],
-                                    value='client',  # Default value
-                                    style={'width': '50%'}
-                                ),
-                                style={'padding-bottom': '20px'}
-                            ),
-                            
-                            # Dropdown to select either client or VA (based on user type)
-                            html.Div(
-                                dcc.Dropdown(
-                                    id='selection-dropdown',
-                                    style={'width': '50%'}
-                                ),
-                                style={'padding-bottom': '20px'}
-                            ),
+                            # Row for dropdowns
+                            dbc.Row(
+                                [
+                                    # Dropdown to select Client or VA
+                                    dbc.Col(
+                                        dcc.Dropdown(
+                                            id='user-type-dropdown',
+                                            options=[
+                                                {'label': 'Client', 'value': 'client'},
+                                                {'label': 'Virtual Assistant (VA)', 'value': 'va'}
+                                            ],
+                                            value='client',  # Default value
+                                            style={'width': '100%'}
+                                        ),
+                                        width=4,  # Set the width to 4 columns out of 12
+                                        style={'padding-right': '10px'}
+                                    ),
+                                    
+                                    # Dropdown to select either client or VA (based on user type)
+                                    dbc.Col(
+                                        dcc.Dropdown(
+                                            id='selection-dropdown',
+                                            style={'width': '100%'}
+                                        ),
+                                        width=4,  # Set the width to 4 columns out of 12
+                                        style={'padding-right': '10px'}
+                                    ),
 
-                            # Dropdown for selecting the time period (3 months, 6 months, or all-time)
-                            html.Div(
-                                dcc.Dropdown(
-                                    id='time-period-dropdown',
-                                    options=[
-                                        {'label': '3 Months', 'value': 3},
-                                        {'label': '6 Months', 'value': 6},
-                                        {'label': 'All Time', 'value': 0},  # 0 for all-time
-                                    ],
-                                    value=3,  # Default to 3 months
-                                    style={'width': '50%'}
-                                ),
+                                    # Dropdown for selecting the time period (3 months, 6 months, or all-time)
+                                    dbc.Col(
+                                        dcc.Dropdown(
+                                            id='time-period-dropdown',
+                                            options=[
+                                                {'label': '3 Months', 'value': 3},
+                                                {'label': '6 Months', 'value': 6},
+                                                {'label': 'All Time', 'value': 0},  # 0 for all-time
+                                            ],
+                                            value=3,  # Default to 3 months
+                                            style={'width': '100%'}
+                                        ),
+                                        width=4,  # Set the width to 4 columns out of 12
+                                    ),
+                                ],
                                 style={'padding-bottom': '20px'}
                             ),
                             
