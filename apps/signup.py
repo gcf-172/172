@@ -276,7 +276,7 @@ def saveuser(loginbtn, existing_username, existing_password, new_username, new_p
             if existing_user.empty:
                 # Existing username does not exist or user is deleted
                 openalert = True
-                alert_message = "Existing username does not exist or has been deleted."
+                alert_message = "Incorrect existing username or password."
             else:
                 # Verify password match
                 stored_password = existing_user.iloc[0]['user_password']
@@ -285,7 +285,7 @@ def saveuser(loginbtn, existing_username, existing_password, new_username, new_p
                 if stored_password != encrypted_password:
                     # Existing password is incorrect
                     openalert = True
-                    alert_message = "Incorrect password for the existing username."
+                    alert_message = "Incorrect existing username or password."
                 else:
                     # Check if the new username already exists
                     check_new_sql = """SELECT * FROM public.users WHERE user_name = %s AND user_delete_ind = false"""
