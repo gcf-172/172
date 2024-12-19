@@ -1,4 +1,5 @@
-from dash import html, dcc
+from dash import Dash, html, dcc, Input, Output, State
+from app import app
 
 layout = html.Div(
     style={
@@ -7,7 +8,7 @@ layout = html.Div(
         'alignItems': 'center',
         'height': '100vh',
         'backgroundColor': '#ffffff',
-        'flexDirection': 'row',  # Updated from column to row to align items side by side
+        'flexDirection': 'row',
     },
     children=[
         # Right Section: Log In Section
@@ -31,8 +32,26 @@ layout = html.Div(
                 dcc.Input(id='username', type='text', placeholder="Username",
                           style={'width': '100%', 'padding': '12px', 'marginBottom': '20px', 'border': '1px solid #B7B7B7', 'borderRadius': '10px'}),
                 html.Label("Password", style={'display': 'block', 'textAlign': 'left', 'fontSize': '14px', 'color': '#2E2C2C'}),
-                dcc.Input(id='password', type='password', placeholder="Password",
-                          style={'width': '100%', 'padding': '12px', 'marginBottom': '20px', 'border': '1px solid #B7B7B7', 'borderRadius': '10px'}),
+                # Password input and button container
+                html.Div(
+                    style={'display': 'flex', 'alignItems': 'center', 'width': '100%', 'marginBottom': '20px'},
+                    children=[
+                        dcc.Input(id='password', type='password', placeholder="Password",
+                                  style={'width': '90%', 'padding': '12px', 'border': '1px solid #B7B7B7', 'borderRadius': '10px'}),
+                        html.Button('Show', id='show-hide-password', n_clicks=0,
+                                    style={
+                                        'backgroundColor': '#f1f1f1',
+                                        'color': '#333',
+                                        'border': '1px solid #ccc',
+                                        'borderRadius': '10px',
+                                        'padding': '5px 10px',
+                                        'fontSize': '14px',
+                                        'cursor': 'pointer',
+                                        'marginLeft': '10px',
+                                        'height': '42px'
+                                    })
+                    ]
+                ),
                 html.Button("LOG IN", id='login-button', n_clicks=0,
                             style={
                                 'backgroundColor': '#3f587b', 
@@ -67,7 +86,7 @@ layout = html.Div(
         ),
         html.Div(
             children=[
-                html.Img(src="/assets/edygrad-ecosytem.png", style={'width': '600px', 'marginBottom': '20px', 'display': 'block', 'marginLeft': 'auto', 'marginRight': 'auto'}),  # Adjusted logo size
+                html.Img(src="/assets/edygrad-ecosytem.png", style={'width': '600px', 'marginBottom': '20px', 'display': 'block', 'marginLeft': 'auto', 'marginRight': 'auto'}),
                 html.H1("Synergy Virtual Allies Network", style={
                     'fontSize': '40px',
                     'fontWeight': 'bold',
@@ -94,3 +113,15 @@ layout = html.Div(
         )    
     ]
 )
+
+# Callback for toggling password visibility
+@app.callback(
+    Output('password', 'type'),
+    Input('show-hide-password', 'n_clicks'),
+    State('password', 'type')
+)
+def toggle_password_visibility(n_clicks, current_type):
+    if n_clicks % 2 == 0:
+        return 'password'  # Hide password
+    else:
+        return 'text'  # Show password
