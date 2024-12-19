@@ -103,7 +103,7 @@ layout = dbc.Container([
             html.Div(
                 id="jobs-table",  # ID for table placeholder
                 className="text-center",
-                style={"fontSize": "18px", "color": "#666", "padding": "0px", "height": "100%"}  # Adjust height here
+                style={"fontSize": "18px", "color": "#666", "padding": "0px", "height": "1200px"}  # Adjust height here
             ),
             width=12,
             style={"border": "2px solid #194D62", "borderRadius": "10px", "padding": "20px", "marginTop": "10px"}
@@ -133,33 +133,26 @@ def update_records_table(jobfilter, jobstatus):
         j.job_status AS "Status"
         FROM 
         jobs j
-        GROUP BY 
-        j.job_id, j.job_title, j.days, j.hours, j.hourly_rate, j.hourly_commission, j.start_date, j.assignment_date, j.job_status
-        ORDER BY 
-        j.job_id
     """
-    conditions =[]
+    conditions = []
     val = []
 
     # Add the WHERE clause if a filter is provided
     if jobfilter:
         # Check if the filter is numeric to search by job_id
         if jobfilter.isdigit():
-            sql += " WHERE j.job_id = %s"
+            conditions.append("j.job_id = %s")
             val.append(int(jobfilter))
         else:
-            sql += """
-                WHERE 
-                j.job_title ILIKE %s
-            """
-            val.extend([f'%{jobfilter}%'])
+            conditions.append("j.job_title ILIKE %s")
+            val.append(f'%{jobfilter}%')
 
     if jobstatus:
         conditions.append("j.job_status = %s")
         val.append(jobstatus)
 
     if conditions:
-        sql += " AND " + " AND ".join(conditions)
+        sql += " WHERE " + " AND ".join(conditions)
 
     # Fetch the filtered data into a DataFrame
     col = ["Job ID", "Job Title", "Days", "Hours", "VA Hourly Rate ($)", "Synergy Hourly Commission ($)", "Job Start Date", "Assignment Start Date", "Status"]
@@ -177,6 +170,7 @@ def update_records_table(jobfilter, jobstatus):
         ) for idx, row in df.iterrows()
     ]
     display_columns = ["Job ID", "Job Title", "Days", "Hours", "VA Hourly Rate ($)", "Synergy Hourly Commission ($)", "Job Start Date", "Assignment Start Date", "Status", "Action"]
+    
     # Creating the updated table with centered text
     table = dbc.Table.from_dataframe(df[display_columns], striped=True, bordered=True, hover=True, size='sm', style={'textAlign': 'center'})
 
