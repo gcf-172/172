@@ -179,50 +179,68 @@ layout = html.Div(
             ]
         ),
 
-        #Individual Reports
-        dbc.Row(
-            dbc.Accordion(
+# Individual Reports
+dbc.Row(
+    dbc.Accordion(
+        [
+            dbc.AccordionItem(
                 [
-                    dbc.AccordionItem(
-                            [
-                                dbc.CardHeader(html.H2("Client/VA Performance Reports"),
-                                               style={'background-color': '#c3d1e4', 'text-align': 'center'}
+                    # Card Header with title
+                    dbc.CardHeader(
+                        html.H2("Client/VA Performance Reports"),
+                        style={'background-color': '#c3d1e4', 'text-align': 'center'}
+                    ),
+                    
+                    dbc.CardBody(
+                        [
+                            # Dropdown to select Client or VA
+                            html.Div(
+                                dcc.Dropdown(
+                                    id='user-type-dropdown',
+                                    options=[
+                                        {'label': 'Client', 'value': 'client'},
+                                        {'label': 'Virtual Assistant (VA)', 'value': 'va'}
+                                    ],
+                                    value='client',  # Default value
+                                    style={'width': '50%'}
                                 ),
-                                
-                                dbc.CardBody(
-                                [
-                                    # Dropdown to select Client or VA
-                                    html.Div(
-                                        dcc.Dropdown(
-                                            id='user-type-dropdown',
-                                            options=[
-                                                {'label': 'Client', 'value': 'client'},
-                                                {'label': 'Virtual Assistant (VA)', 'value': 'va'}
-                                            ],
-                                            value='client',  # default value
-                                            style={'width': '50%'}
-                                        ),
-                                        style={'padding-bottom': '20px'}
-                                    ),
-                                    
-                                    # Dropdown to select either client or VA
-                                    html.Div(
-                                        dcc.Dropdown(
-                                            id='selection-dropdown',
-                                            style={'width': '50%'}
-                                        ),
-                                        style={'padding-bottom': '20px'}
-                                    ),
-                                    
-                                    # Output area for performance reports
-                                    html.Div(id='performance-report', style={'margin-top': '20px'})
-                                 ]
-                             )
+                                style={'padding-bottom': '20px'}
+                            ),
+                            
+                            # Dropdown to select either client or VA (based on user type)
+                            html.Div(
+                                dcc.Dropdown(
+                                    id='selection-dropdown',
+                                    style={'width': '50%'}
+                                ),
+                                style={'padding-bottom': '20px'}
+                            ),
+
+                            # Dropdown for selecting the time period (3 months, 6 months, or all-time)
+                            html.Div(
+                                dcc.Dropdown(
+                                    id='time-period-dropdown',
+                                    options=[
+                                        {'label': '3 Months', 'value': 3},
+                                        {'label': '6 Months', 'value': 6},
+                                        {'label': 'All Time', 'value': 0},  # 0 for all-time
+                                    ],
+                                    value=3,  # Default to 3 months
+                                    style={'width': '50%'}
+                                ),
+                                style={'padding-bottom': '20px'}
+                            ),
+                            
+                            # Output area for performance reports
+                            html.Div(id='performance-report', style={'margin-top': '20px'})
                         ]
                     )
                 ]
             )
-        )
+        ]
+    )
+)
+
     ]
 )
 
@@ -915,25 +933,48 @@ def get_vas():
     df_columns = ['va_id', 'va_first_m', 'va_last_m']
     return getDataFromDB(query, (), df_columns)
 
-# Fetching jobs based on client_id or va_id with a 3-month filter
-def get_jobs(client_id=None, va_id=None):
-    three_months_ago = datetime.now() - timedelta(days=90)
+# Fetching jobs based on client_id or va_id with a customizable date filter
+def get_jobs(client_id=None, va_id=None, months=3):  # Default to 3 months if not specified
+    # Ensure months is not None
+    if months is None:
+        months = 3  # Default to 3 months if None
+    
+    # Calculate the date filter based on the selected months
+    if months == 0:
+        # For all-time, no filtering needed
+        date_filter = None
+    else:
+        date_filter = datetime.now() - timedelta(days=months * 30)
+    
+    # Build the query depending on whether client_id or va_id is provided
     if client_id:
         query = """
             SELECT job_title, days, hours, hourly_rate, hourly_commission, job_status, start_date, assignment_date
-            FROM jobs WHERE client_id = %s AND job_delete_ind = FALSE AND start_date >= %s
+            FROM jobs WHERE client_id = %s AND job_delete_ind = FALSE
         """
-        values = (client_id, three_months_ago)
+        values = (client_id,)
+        if date_filter:
+            query += " AND start_date >= %s"
+            values += (date_filter,)
     elif va_id:
         query = """
             SELECT job_title, days, hours, hourly_rate, hourly_commission, job_status, start_date, assignment_date
-            FROM jobs WHERE va_id = %s AND job_delete_ind = FALSE AND start_date >= %s
+            FROM jobs WHERE va_id = %s AND job_delete_ind = FALSE
         """
-        values = (va_id, three_months_ago)
+        values = (va_id,)
+        if date_filter:
+            query += " AND start_date >= %s"
+            values += (date_filter,)
     else:
-        query = "SELECT job_title, days, hours, hourly_rate, hourly_commission, job_status, start_date, assignment_date FROM jobs WHERE job_delete_ind = FALSE AND start_date >= %s"
-        values = (three_months_ago,)
-    
+        query = """
+            SELECT job_title, days, hours, hourly_rate, hourly_commission, job_status, start_date, assignment_date
+            FROM jobs WHERE job_delete_ind = FALSE
+        """
+        values = ()
+        if date_filter:
+            query += " AND start_date >= %s"
+            values += (date_filter,)
+
     df_columns = ['job_title', 'days', 'hours', 'hourly_rate', 'hourly_commission', 'job_status', 'start_date', 'assignment_date']
     return getDataFromDB(query, values, df_columns)
 
@@ -959,33 +1000,49 @@ def update_selection_dropdown(user_type):
 @app.callback(
     Output('performance-report', 'children'),
     Input('user-type-dropdown', 'value'),
-    Input('selection-dropdown', 'value')
+    Input('selection-dropdown', 'value'),
+    Input('time-period-dropdown', 'value')  # Include the time period dropdown value
 )
-def generate_performance_report(user_type, selected_id):
+def generate_performance_report(user_type, selected_id, months):
+    # Ensure months has a valid value
+    if months is None:
+        months = 3  # Default to 3 months if not provided
+    
+    # Map the months to a string title for the period
+    if months == 0:
+        period_title = "All Time"
+    elif months == 3:
+        period_title = "3 Months"
+    elif months == 6:
+        period_title = "6 Months"
+    else:
+        period_title = f"{months} Months"  # In case other values are used
+
+    # Fetch jobs based on selected client/VA and months filter
     if user_type == 'client' and selected_id:
-        jobs_df = get_jobs(client_id=selected_id)
+        jobs_df = get_jobs(client_id=selected_id, months=months)
         if jobs_df.empty:
-            return "No jobs found for this client for the past 3 months."
-        report = generate_report(jobs_df, "client")
+            return "No jobs found for this client for the selected time period."
+        report = generate_report(jobs_df, "client", period_title)  # Pass period_title
     elif user_type == 'va' and selected_id:
-        jobs_df = get_jobs(va_id=selected_id)
+        jobs_df = get_jobs(va_id=selected_id, months=months)
         if jobs_df.empty:
-            return "No jobs found for this VA for the past 3 months."
-        report = generate_report(jobs_df, "va")
+            return "No jobs found for this VA for the selected time period."
+        report = generate_report(jobs_df, "va", period_title)  # Pass period_title
     else:
         return "Please select a valid client or VA."
     
     return report
 
 # Function to generate a performance report (table)
-def generate_report(df, user_type):
+def generate_report(df, user_type, period_title):  # Add period_title as argument
     # Calculate total number of jobs and total commissions
     total_jobs = df.shape[0]
     total_commission = (df['hours'] * df['hourly_commission']).sum()
 
     # Create a DataFrame for the report table
     report_df = pd.DataFrame({
-        'Client/VA': [f"Total for this {user_type}"],
+        'Client/VA': [f"Total for this {user_type} in the period: {period_title}"],
         'Number of Jobs': [total_jobs],
         'Total Commissions ($)': [f"${total_commission:,.2f}"]
     })
@@ -1010,7 +1067,7 @@ def generate_report(df, user_type):
     )
 
     return html.Div([
-        html.H3(f"Performance Report for the Past 3 Months"),
+        html.H3(f"Performance Report for the Past {period_title}"),
         table,  # Table for overall summary
         html.H4(f"Job Details"),
         job_details_table  # Table for job-level details
