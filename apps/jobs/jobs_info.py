@@ -40,14 +40,14 @@ layout = dbc.Container([
             dbc.Col(
                 [
                     html.Label(
-                        "Search Job Title, Client Name, VA Name or Job ID", 
+                        "Search Job Title, Client Name, VA Name", 
                         className="form-label", 
                         style={"fontSize": "18px", "fontWeight": "bold"}
                     ),
                     dcc.Input(
                         id="search_job_info_title",  # ID for search bar
                         type="text",
-                        placeholder="Enter Job Title, Client Name, VA Name or their IDs...",
+                        placeholder="Enter Job Title, Client Name, VA Name or multiple terms...",
                         className="form-control",
                         style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px"}
                     ),
@@ -82,7 +82,7 @@ layout = dbc.Container([
             html.Div(
                 id="jobs-info-table",  # ID for table placeholder
                 className="text-center",
-                style={"fontSize": "18px", "color": "#666", "padding": "0px", "height": "100%"}  # Adjust height here
+                style={"fontSize": "18px", "color": "#666", "padding": "0px", "height": "1200px"}  # Adjust height here
             ),
             width=12,
             style={"border": "2px solid #194D62", "borderRadius": "10px", "padding": "20px", "marginTop": "10px"}
@@ -125,29 +125,25 @@ def update_records_table(jobinfofilter):
 
     # Add the WHERE clause if a filter is provided
     if jobinfofilter:
+        # Split the jobinfofilter by commas and remove any leading/trailing spaces
+        terms = [term.strip() for term in jobinfofilter.split(',')]
+
         # Initialize WHERE clause
-        sql += " AND "
+        sql += " AND ("
+
         conditions = []
+        
+        for term in terms:
+            # For each term, we check Job Title, Client Name, and Assigned VA
+            conditions.append(
+                "(jobs.job_title ILIKE %s OR "
+                "CONCAT(clients.client_first_m, ' ', clients.client_last_m) ILIKE %s OR "
+                "COALESCE(CONCAT(va.va_first_m, ' ', va.va_last_m), '') ILIKE %s)"
+            )
+            val.extend([f'%{term}%', f'%{term}%', f'%{term}%'])
 
-        # If the filter is numeric (for job_id)
-        if jobinfofilter.isdigit():
-            conditions.append("jobs.job_id = %s")
-            val.append(int(jobinfofilter))
-        else:
-            # Check if filter matches job_title
-            conditions.append("jobs.job_title ILIKE %s")
-            val.append(f'%{jobinfofilter}%')
-
-            # Check if filter matches client_name (first and last name)
-            conditions.append("CONCAT(clients.client_first_m, ' ', clients.client_last_m) ILIKE %s")
-            val.append(f'%{jobinfofilter}%')
-
-            # Check if filter matches VA name (first and last name)
-            conditions.append("COALESCE(CONCAT(va.va_first_m, ' ', va.va_last_m), '') ILIKE %s")
-            val.append(f'%{jobinfofilter}%')
-
-        # Join all conditions with OR
-        sql += " (" + " OR ".join(conditions) + ")"
+        # Join all conditions with AND
+        sql += " AND ".join(conditions) + ")"
 
     # Add the GROUP BY and ORDER BY clauses
     sql += """
@@ -175,7 +171,7 @@ def update_records_table(jobinfofilter):
         ) for idx, row in df.iterrows()
     ]
 
-    display_columns = ["Job ID", "Job Title", "Client Name", "Required Skills", "Assigned VA", "Action"]
+    display_columns = ["Job Title", "Client Name", "Required Skills", "Assigned VA", "Action"]
 
     # Creating the updated table with centered text
     table = dbc.Table.from_dataframe(df[display_columns], striped=True, bordered=True, hover=True, size='sm', style={'textAlign': 'center'})
