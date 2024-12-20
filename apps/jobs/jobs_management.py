@@ -40,19 +40,19 @@ layout = dbc.Container([
             dbc.Col(
                 [
                     html.Label(
-                        "Search Job Title or ID", 
+                        "Search Job Title", 
                         className="form-label", 
                         style={"fontSize": "18px", "fontWeight": "bold"}
                     ),
                     dcc.Input(
                         id="search_job_title",  # ID for search bar
                         type="text",
-                        placeholder="Enter Job Title or ID...",
+                        placeholder="Enter Job Title...",
                         className="form-control",
-                        style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px"}
+                        style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px", "width": "100%"}
                     ),
                 ],
-                md=8,
+                md=6,
             ),
             dbc.Col(
                 [
@@ -70,10 +70,10 @@ layout = dbc.Container([
                         ],
                         placeholder="Select Job Status",
                         className="form-control",
-                        style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px"}
+                        style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px", 'border': 'none'}
                     ),
                 ],
-                md=8,
+                md=6,
             ),
         ],
         className="mb-4",
@@ -103,7 +103,7 @@ layout = dbc.Container([
             html.Div(
                 id="jobs-table",  # ID for table placeholder
                 className="text-center",
-                style={"fontSize": "18px", "color": "#666", "padding": "0px", "height": "1200px"}  # Adjust height here
+                style={"fontSize": "18px", "color": "#666", "padding": "0px", "height": "100%"}  # Adjust height here
             ),
             width=12,
             style={"border": "2px solid #194D62", "borderRadius": "10px", "padding": "20px", "marginTop": "10px"}
@@ -119,57 +119,64 @@ layout = dbc.Container([
     ]
 )
 def update_records_table(jobfilter, jobstatus):
-    # Base SQL query for the job table
+    # Base SQL query for the job table (removed Job ID column)
     sql = """
         SELECT 
-        j.job_id AS "Job ID",
         j.job_title AS "Job Title",
         j.days AS "Days",
         j.hours AS "Hours",
-        j.hourly_rate AS "VA Hourly Rate ($)",
-        j.hourly_commission AS "Synergy Hourly Commission ($)",
+        j.hourly_rate AS "VA Hourly Rate",
+        j.hourly_commission AS "Synergy Hourly Commission",
         j.start_date AS "Job Start Date",
         j.assignment_date AS "Assignment Start Date",
         j.job_status AS "Status"
         FROM 
         jobs j
+        WHERE 1=1  -- Always true condition to simplify dynamic query building
     """
+    
+    # Initialize conditions list and values list for parameters
     conditions = []
     val = []
 
-    # Add the WHERE clause if a filter is provided
+    # Add the job title filter if it is provided
     if jobfilter:
-        # Check if the filter is numeric to search by job_id
-        if jobfilter.isdigit():
-            conditions.append("j.job_id = %s")
-            val.append(int(jobfilter))
-        else:
-            conditions.append("j.job_title ILIKE %s")
-            val.append(f'%{jobfilter}%')
+        conditions.append("j.job_title ILIKE %s")
+        val.append(f'%{jobfilter}%')
 
+    # Add the job status filter if it is provided
     if jobstatus:
         conditions.append("j.job_status = %s")
         val.append(jobstatus)
 
+    # Add conditions to the SQL query if there are any filters
     if conditions:
-        sql += " WHERE " + " AND ".join(conditions)
+        sql += " AND " + " AND ".join(conditions)
+
+    sql += " ORDER BY j.job_title"  # Sorting by job title
 
     # Fetch the filtered data into a DataFrame
-    col = ["Job ID", "Job Title", "Days", "Hours", "VA Hourly Rate ($)", "Synergy Hourly Commission ($)", "Job Start Date", "Assignment Start Date", "Status"]
+    col = ["Job Title", "Days", "Hours", "VA Hourly Rate ($)", "Synergy Hourly Commission ($)", "Job Start Date", "Assignment Start Date", "Status"]
     df = getDataFromDB(sql, val, col)
 
     if df.empty:
         return [html.Div("No records found.", className="text-center")]
 
+    # Format the VA Hourly Rate and Synergy Hourly Commission columns to include dollar signs
+    df["VA Hourly Rate ($)"] = df["VA Hourly Rate ($)"].apply(lambda x: f"${x:,.2f}" if pd.notnull(x) else "")
+    df["Synergy Hourly Commission ($)"] = df["Synergy Hourly Commission ($)"].apply(lambda x: f"${x:,.2f}" if pd.notnull(x) else "")
+
     # Generating edit buttons for each job
     df['Action'] = [
         html.Div(
             dbc.Button("Edit", color='warning', size='sm', 
-                       href=f'/jobs_profile/jobs_management_profile?mode=edit&id={row["Job ID"]}'),
+                       href=f'/jobs_profile/jobs_management_profile?mode=edit&id={row["Job Title"]}'),
             className='text-center'
         ) for idx, row in df.iterrows()
     ]
-    display_columns = ["Job ID", "Job Title", "Days", "Hours", "VA Hourly Rate ($)", "Synergy Hourly Commission ($)", "Job Start Date", "Assignment Start Date", "Status", "Action"]
+    
+    # Defining display columns excluding "Job ID"
+    display_columns = ["Job Title", "Days", "Hours", "VA Hourly Rate ($)", "Synergy Hourly Commission ($)", "Job Start Date", "Assignment Start Date", "Status", "Action"]
     
     # Creating the updated table with centered text
     table = dbc.Table.from_dataframe(df[display_columns], striped=True, bordered=True, hover=True, size='sm', style={'textAlign': 'center'})
