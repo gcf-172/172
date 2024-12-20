@@ -120,7 +120,8 @@ layout = html.Div(
                             html.Div(
                                 dcc.Checklist(
                                     id='va_skills',
-                                    style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px"}
+                                    style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px",'maxHeight': '200px','overflowY': 'scroll', 'display':'grid', 'gridTemplateColumns': 'repeat(3, 1fr)', 'gap': '10px'},
+                                    inline=True
                                 ),
                                 className='dash-bootstrap'
                             ),
