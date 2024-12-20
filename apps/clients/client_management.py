@@ -40,14 +40,14 @@ layout = dbc.Container([
             dbc.Col(
                 [
                     html.Label(
-                        "Search Client Name or ID", 
+                        "Search Client Name, Company, Email, or Status", 
                         className="form-label", 
                         style={"fontSize": "18px", "fontWeight": "bold"}
                     ),
                     dcc.Input(
                         id="search_client_name",  # ID for search bar
                         type="text",
-                        placeholder="Enter Client Name or ID...",
+                        placeholder="Enter Search Term...",
                         className="form-control",
                         style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px"}
                     ),
@@ -80,7 +80,7 @@ layout = dbc.Container([
     ]
 )
 def update_records_table(clientfilter):
-    # Base SQL query for the client table
+    # Base SQL query for the client table (without the Client ID column)
     sql = """
     SELECT 
         c.client_id,
@@ -96,20 +96,19 @@ def update_records_table(clientfilter):
     """
     val = []
 
-    # Add additional filters
+    # Add additional filters if search term is provided
     if clientfilter:
-        # Check if the filter is numeric to search by client_id
-        if clientfilter.isdigit():
-            sql += " AND c.client_id = %s"
-            val.append(int(clientfilter))
-        else:
-            sql += """
-                AND (
-                    c.client_first_m ILIKE %s OR 
-                    c.client_last_m ILIKE %s
-                )
-            """
-            val.extend([f'%{clientfilter}%'] * 2)
+        # Use ILIKE to search for any match in the following fields:
+        sql += """
+            AND (
+                c.client_first_m ILIKE %s OR
+                c.client_last_m ILIKE %s OR
+                c.client_company ILIKE %s OR
+                c.client_email ILIKE %s OR
+                c.client_status ILIKE %s
+            )
+        """
+        val.extend([f'%{clientfilter}%'] * 5)  # Apply the filter to all fields
 
     # Add ORDER BY clause
     sql += """
@@ -117,9 +116,8 @@ def update_records_table(clientfilter):
         c.client_id
     """
 
-    # Define the column names
-    col = ["Client ID", "Client Name", "Company", "Email Address", "Date Acquired", "Status"]
-
+    # Define the column names (excluding Client ID from the display)
+    col = ["Client ID", "Client Name", "Company", "Client Email Address", "Date Acquired", "Status"]
 
     # Fetch the filtered data into a DataFrame
     df = getDataFromDB(sql, val, col)
@@ -135,7 +133,10 @@ def update_records_table(clientfilter):
             className='text-center'
         ) for idx, row in df.iterrows()
     ]
-    display_columns = ["Client ID", "Client Name", "Company", "Email Address", "Date Acquired", "Status", "Action"]
+
+    # Exclude the "Client ID" column from the displayed table
+    display_columns = ["Client Name", "Company", "Client Email Address", "Date Acquired", "Status", "Action"]
+
     # Creating the updated table with centered text
     table = dbc.Table.from_dataframe(df[display_columns], striped=True, bordered=True, hover=True, size='sm', style={'textAlign': 'center'})
 
