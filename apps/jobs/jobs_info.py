@@ -82,7 +82,7 @@ layout = dbc.Container([
             html.Div(
                 id="jobs-info-table",  # ID for table placeholder
                 className="text-center",
-                style={"fontSize": "18px", "color": "#666", "padding": "0px", "height": "1200px"}  # Adjust height here
+                style={"fontSize": "18px", "color": "#666", "padding": "0px", "height": "100%"}  # Adjust height here
             ),
             width=12,
             style={"border": "2px solid #194D62", "borderRadius": "10px", "padding": "20px", "marginTop": "10px"}
