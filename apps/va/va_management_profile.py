@@ -18,7 +18,7 @@ layout = html.Div(
                     dbc.Button(
                         "Back",
                         color="secondary",
-                        href="/va_profile",
+                        href="/va_profile_info",
                         style={
                             "borderRadius": "20px",
                             "fontWeight": "bold",
@@ -120,7 +120,7 @@ layout = html.Div(
                             html.Div(
                                 dcc.Checklist(
                                     id='va_skills',
-                                    style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px",'maxHeight': '200px','overflowY': 'scroll', 'display':'grid', 'gridTemplateColumns': 'repeat(3, 1fr)', 'gap': '10px'},
+                                    style={"borderRadius": "10px", "backgroundColor": "#f0f2f5", "fontSize": "18px",'maxHeight': '180px','overflowY': 'scroll', 'display':'grid', 'gridTemplateColumns': 'repeat(3, 1fr)', 'gap': '10px'},
                                     inline=True
                                 ),
                                 className='dash-bootstrap'
@@ -216,6 +216,7 @@ def va_profile_load(pathname, urlsearch):
         sql = """
         SELECT skill_m as label, skill_id as value
         FROM skills
+        WHERE skill_delete_ind=false
         """
         values = []
         cols = ['label', 'value']

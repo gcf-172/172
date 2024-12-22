@@ -40,19 +40,19 @@ layout = dbc.Container([
             dbc.Col(
                 [
                     html.Label(
-                        "Search VA ID or Name", 
+                        "Search Name", 
                         className="form-label", 
                         style={"fontSize": "18px", "fontWeight": "bold"}
                     ),
                     dcc.Input(
                         id="search_va_name",  # ID for search bar
                         type="text",
-                        placeholder="Enter VA ID or name...",
+                        placeholder="Enter VA name...",
                         className="form-control",
-                        style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px"}
+                        style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px", "width": "100%"}
                     ),
                 ],
-                md=8,
+                md=6,
             ),
             dbc.Col(
                 [
@@ -73,7 +73,7 @@ layout = dbc.Container([
                         style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px"}
                     ),
                 ],
-                md=8,
+                md=3,
             ),
         ],
         className="mb-4",
@@ -120,7 +120,6 @@ layout = dbc.Container([
         Input('search_va_status', 'value'),
     ]
 )
-
 def update_records_table(vafilter, vastatus):
     # Base SQL query for the va table
     sql = """
@@ -135,24 +134,18 @@ def update_records_table(vafilter, vastatus):
             va v
         WHERE
             va_delete_ind = false
-
     """
     conditions = []
     val = []
 
-    # Add the WHERE clause if a filter is provided
+    # Modify the filtering logic based on the search name
     if vafilter:
-        # Check if the filter is numeric to search by va_id
-        if vafilter.isdigit():
-            sql += " AND v.va_id = %s"
-            val.append(int(vafilter))
-        else:
-            sql += """
-                AND 
-                v.va_first_m ILIKE %s OR 
-                v.va_last_m ILIKE %s
-            """
-            val.extend([f'%{vafilter}%'] * 2)
+        sql += """
+            AND 
+            (v.va_first_m ILIKE %s OR 
+            v.va_last_m ILIKE %s)
+        """
+        val.extend([f'%{vafilter}%', f'%{vafilter}%'])
 
     if vastatus:
         conditions.append("v.va_status = %s")
@@ -176,7 +169,7 @@ def update_records_table(vafilter, vastatus):
     if df.empty:
         return [html.Div("No records found.", className="text-center")]
 
-    # Generating edit buttons for each va
+    # Generating edit buttons for each VA
     df['Action'] = [
         html.Div(
             dbc.Button("Edit", color='warning', size='sm', 
@@ -184,7 +177,9 @@ def update_records_table(vafilter, vastatus):
             className='text-center'
         ) for idx, row in df.iterrows()
     ]
-    display_columns = ["VA ID", "VA Name", "Email Address", "Address", "Date Hired", "Status","Action"]
+    
+    display_columns = ["VA Name", "Email Address", "Address", "Date Hired", "Status", "Action"]
+    
     # Creating the updated table with centered text
     table = dbc.Table.from_dataframe(df[display_columns], striped=True, bordered=True, hover=True, size='sm', style={'textAlign': 'center'})
 

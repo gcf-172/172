@@ -40,14 +40,14 @@ layout = dbc.Container([
             dbc.Col(
                 [
                     html.Label(
-                        "Search Skill Name or Description", 
+                        "Search Skill Name or ID", 
                         className="form-label", 
                         style={"fontSize": "18px", "fontWeight": "bold"}
                     ),
                     dcc.Input(
                         id="search_skill_m",  # ID for search bar
                         type="text",
-                        placeholder="Enter Skill Name or Description...",
+                        placeholder="Enter Skill Name or ID...",
                         className="form-control",
                         style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px"}
                     ),
@@ -81,7 +81,7 @@ layout = dbc.Container([
 )
 
 def update_records_table(skillfilter):
-    # Base SQL query for the skill table (without the Skill ID column)
+    # Base SQL query for the skill table
     sql = """
         SELECT 
             s.skill_id,
@@ -91,17 +91,22 @@ def update_records_table(skillfilter):
             skills s
         WHERE
             skill_delete_ind = false
+
     """
     val = []
 
     # Add the WHERE clause if a filter is provided
     if skillfilter:
-        # Search by Skill Name or Skill Description using ILIKE for partial matches
-        sql += """
-            AND 
-            (s.skill_m ILIKE %s OR s.skill_description ILIKE %s)
-        """
-        val.extend([f'%{skillfilter}%', f'%{skillfilter}%'])
+        # Check if the filter is numeric to search by skill_id
+        if skillfilter.isdigit():
+            sql += " AND s.skill_id = %s"
+            val.append(int(skillfilter))
+        else:
+            sql += """
+                AND 
+                s.skill_m ILIKE %s
+            """
+            val.extend([f'%{skillfilter}%'])
 
     # Add the GROUP BY and ORDER BY clauses
     sql += """
@@ -126,10 +131,7 @@ def update_records_table(skillfilter):
             className='text-center'
         ) for idx, row in df.iterrows()
     ]
-    
-    # Exclude Skill ID from the displayed table
     display_columns = ["Skill Name", "Skill Description", "Action"]
-
     # Creating the updated table with centered text
     table = dbc.Table.from_dataframe(df[display_columns], striped=True, bordered=True, hover=True, size='sm', style={'textAlign': 'center'})
 

@@ -292,6 +292,7 @@ def job_profile_load(pathname, urlsearch):
         sql = """
         SELECT skill_m as label, skill_id as value
         FROM skills
+        WHERE skill_delete_ind=false
         """
         df = getDataFromDB(sql, values, cols)
         skill_options = df.to_dict('records')

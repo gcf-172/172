@@ -73,7 +73,7 @@ layout = dbc.Container([
                         style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px", 'border': 'none'}
                     ),
                 ],
-                md=6,
+                md=3,
             ),
         ],
         className="mb-4",
@@ -156,15 +156,15 @@ def update_records_table(jobfilter, jobstatus):
     sql += " ORDER BY j.job_title"  # Sorting by job title
 
     # Fetch the filtered data into a DataFrame
-    col = ["Job Title", "Days", "Hours", "VA Hourly Rate ($)", "Synergy Hourly Commission ($)", "Job Start Date", "Assignment Start Date", "Status"]
+    col = ["Job Title", "Days", "Hours", "VA Hourly Rate", "Synergy Hourly Commission", "Job Start Date", "Assignment Start Date", "Status"]
     df = getDataFromDB(sql, val, col)
 
     if df.empty:
         return [html.Div("No records found.", className="text-center")]
 
     # Format the VA Hourly Rate and Synergy Hourly Commission columns to include dollar signs
-    df["VA Hourly Rate ($)"] = df["VA Hourly Rate ($)"].apply(lambda x: f"${x:,.2f}" if pd.notnull(x) else "")
-    df["Synergy Hourly Commission ($)"] = df["Synergy Hourly Commission ($)"].apply(lambda x: f"${x:,.2f}" if pd.notnull(x) else "")
+    df["VA Hourly Rate"] = df["VA Hourly Rate"].apply(lambda x: f"${x:,.2f}" if pd.notnull(x) else "")
+    df["Synergy Hourly Commission"] = df["Synergy Hourly Commission"].apply(lambda x: f"${x:,.2f}" if pd.notnull(x) else "")
 
     # Generating edit buttons for each job
     df['Action'] = [
@@ -176,7 +176,7 @@ def update_records_table(jobfilter, jobstatus):
     ]
     
     # Defining display columns excluding "Job ID"
-    display_columns = ["Job Title", "Days", "Hours", "VA Hourly Rate ($)", "Synergy Hourly Commission ($)", "Job Start Date", "Assignment Start Date", "Status", "Action"]
+    display_columns = ["Job Title", "Days", "Hours", "VA Hourly Rate", "Synergy Hourly Commission", "Job Start Date", "Assignment Start Date", "Status", "Action"]
     
     # Creating the updated table with centered text
     table = dbc.Table.from_dataframe(df[display_columns], striped=True, bordered=True, hover=True, size='sm', style={'textAlign': 'center'})

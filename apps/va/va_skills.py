@@ -40,14 +40,14 @@ layout = dbc.Container([
             dbc.Col(
                 [
                     html.Label(
-                        "Search VA ID, VA Name or Skill(s)", 
+                        "Search VA Name or Skill(s)", 
                         className="form-label", 
                         style={"fontSize": "18px", "fontWeight": "bold"}
                     ),
                     dcc.Input(
                         id="search_va_skill",  # ID for search bar
                         type="text",
-                        placeholder="Enter VA ID, VA Name, or Skill(s)...",
+                        placeholder="Enter VA Name, or Skill(s)...",
                         className="form-control",
                         style={"borderRadius": "20px", "backgroundColor": "#f0f2f5", "fontSize": "18px"}
                     ),
@@ -102,7 +102,6 @@ def update_records_table(vaskillsfilter):
     # Base SQL query for the va table
     sql = """
         SELECT 
-            va.va_id AS "VA ID",
             CONCAT(va.va_first_m, ' ', va.va_last_m) AS "VA Name",
             STRING_AGG(skills.skill_m, ', ') AS "Skills"
         FROM 
@@ -121,17 +120,14 @@ def update_records_table(vaskillsfilter):
         conditions = []
 
         for filter_item in filters:
-            if filter_item.isdigit():  # Check if the filter is numeric for VA ID
-                conditions.append("va.va_id = %s")
-                val.append(int(filter_item))
-            else:  # Filter for VA Name or Skill Name (partial matches allowed)
-                conditions.append("""
-                    va.va_first_m ILIKE %s OR 
-                    va.va_last_m ILIKE %s OR 
-                    skills.skill_m ILIKE %s
-                """)
-                # Wrap the filter in `%` for partial matching
-                val.extend([f'%{filter_item}%'] * 3)
+            # Filter for VA Name or Skill Name (partial matches allowed)
+            conditions.append("""
+                va.va_first_m ILIKE %s OR 
+                va.va_last_m ILIKE %s OR 
+                skills.skill_m ILIKE %s
+            """)
+            # Wrap the filter in `%` for partial matching
+            val.extend([f'%{filter_item}%'] * 3)
 
         # Combine all conditions using OR
         sql += " WHERE " + " OR ".join(f"({cond})" for cond in conditions)
@@ -139,13 +135,13 @@ def update_records_table(vaskillsfilter):
     # Add the GROUP BY and ORDER BY clauses
     sql += """
         GROUP BY 
-            va.va_id, va.va_first_m, va.va_last_m
+            va.va_first_m, va.va_last_m
         ORDER BY 
-            va.va_id
+            va.va_first_m, va.va_last_m
     """
 
-    # Define the column names
-    col = ["VA ID", "VA Name", "Skills"]
+    # Define the column names (excluding VA ID)
+    col = ["VA Name", "Skills"]
 
     # Fetch the filtered data into a DataFrame
     df = getDataFromDB(sql, val, col)
@@ -153,16 +149,18 @@ def update_records_table(vaskillsfilter):
     if df.empty:
         return [html.Div("No records found.", className="text-center")]
 
-    # Generating edit buttons for each va
+    # Generating edit buttons for each VA
     df['Action'] = [
         html.Div(
             dbc.Button("Edit", color='warning', size='sm', 
-                       href=f'/va_profile/va_management_profile?mode=edit&id={row["VA ID"]}'),
+                       href=f'/va_profile/va_management_profile?mode=edit&id={row["VA Name"]}'),
             className='text-center'
         ) for idx, row in df.iterrows()
     ]
-    display_columns = ["VA ID", "VA Name", "Skills", "Action"]
-    # Creating the updated table with centered text
+    
+    display_columns = ["VA Name", "Skills", "Action"]
+    
+    # Creating the updated table with centered text (no VA ID column)
     table = dbc.Table.from_dataframe(df[display_columns], striped=True, bordered=True, hover=True, size='sm', style={'textAlign': 'center'})
 
     return [table]
